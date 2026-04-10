@@ -68,8 +68,8 @@
 </head>
 <body class="bg-gray-100 flex flex-col md:flex-row h-screen overflow-hidden">
 
-    <!-- 왼쪽/상단: 지도 영역 -->
-    <div class="w-full h-[55%] md:w-2/3 md:h-full relative bg-slate-50 border-b md:border-b-0 md:border-r border-gray-300 shadow-2xl z-10 flex flex-col">
+    <!-- 왼쪽/상단: 지도 영역 (모바일에서 높이 45%로 축소) -->
+    <div class="w-full h-[45%] md:w-2/3 md:h-full relative bg-slate-50 border-b md:border-b-0 md:border-r border-gray-300 shadow-2xl z-10 flex flex-col">
         <div class="absolute top-4 left-4 md:top-6 md:left-6 z-20 pointer-events-none">
             <h1 class="text-2xl md:text-3xl font-black text-gray-800 drop-shadow-md">제9대 전국동시지방선거</h1>
             <h2 class="text-lg md:text-xl font-bold text-gray-600 mt-1">구미시의회 선거 후보자 지도</h2>
@@ -89,22 +89,25 @@
         </div>
     </div>
 
-    <!-- 오른쪽/하단: 정보 패널 (차트 및 후보자 리스트) -->
-    <div class="w-full h-[45%] md:w-1/3 md:h-full overflow-y-auto bg-white flex flex-col relative">
-        <!-- 상단 고정 헤더 영역 -->
-        <div class="sticky top-0 bg-white z-20 p-6 pb-2 border-b border-gray-100 shadow-sm">
-            <h2 id="panel-district-title" class="text-2xl font-black text-gray-800 mb-4">선거구를 선택해주세요</h2>
-            
-            <!-- 도넛 차트 영역 -->
-            <div class="w-full h-48 relative">
-                <canvas id="partyChart"></canvas>
-            </div>
+    <!-- 오른쪽/하단: 정보 패널 (모바일에서 높이 55%로 확대) -->
+    <div class="w-full h-[55%] md:w-1/3 md:h-full overflow-y-auto bg-white flex flex-col relative">
+        <!-- 상단 고정 헤더 영역 (차트를 빼고 제목만 고정) -->
+        <div class="sticky top-0 bg-white z-30 p-4 md:p-6 border-b border-gray-100 shadow-sm flex-shrink-0">
+            <h2 id="panel-district-title" class="text-xl md:text-2xl font-black text-gray-800 text-center md:text-left">선거구를 선택해주세요</h2>
         </div>
 
-        <!-- 후보자 리스트 영역 -->
-        <div id="candidate-list" class="flex-1 p-6 flex flex-col gap-4">
-            <div class="h-full flex items-center justify-center">
-                <p class="text-gray-400 font-medium">지도의 선거구를 클릭하거나 마우스를 올리면<br>여기에 후보자 명단이 나타납니다.</p>
+        <!-- 스크롤되는 콘텐츠 영역 -->
+        <div class="flex-1 flex flex-col pb-8">
+            <!-- 도넛 차트 영역 (스크롤을 내리면 위로 올라감) -->
+            <div class="w-full h-40 md:h-48 relative mt-4 mb-2 flex-shrink-0">
+                <canvas id="partyChart"></canvas>
+            </div>
+
+            <!-- 후보자 리스트 영역 -->
+            <div id="candidate-list" class="px-4 md:px-6 flex flex-col gap-4">
+                <div class="py-12 flex items-center justify-center">
+                    <p class="text-gray-400 font-medium text-sm text-center">지도의 선거구를 클릭하거나 마우스를 올리면<br>여기에 후보자 명단이 나타납니다.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -118,7 +121,8 @@
         const PARTY_COLORS = {
             "민주당": "#002cbe",    // 더불어민주당 고유 파란색
             "국민의힘": "#E61E2B",  // 국민의힘 고유 빨간색
-            "무소속": "#9ca3af"     // 은색(회색)
+            "무소속": "#9ca3af",    // 은색(회색)
+            "개혁신당": "#FF7A00"   // 예시 정당 추가
         };
 
         // 💡 이곳에서 후보자 데이터를 자유롭게 편집하세요.
@@ -166,7 +170,6 @@
                 { name: "김현경", party: "국민의힘", symbol: "2-가", photo: "https://info.nec.go.kr/photo_20260603/Gsg4707/Hb100158300/gicho/100158300.JPG?ver=2015009" },
                 { name: "정지원", party: "국민의힘", symbol: "2-나", photo: "https://info.nec.go.kr/photo_20260603/Gsg4707/Hb100161218/gicho/100161218.JPG?ver=2031031" }
             ]
-            // 다른 선거구명도 필요에 따라 추가하세요.
         };
 
 
@@ -174,7 +177,6 @@
         // 🗺️ 지도 및 시스템 로직 영역 🗺️
         // ==========================================
 
-        // URL 오류 방지: refs/heads/main 대신 보통 쓰이는 main 경로로 수정 및 캐시 방지
         const geojsonUrl = "https://raw.githubusercontent.com/Hosain1291/gumi9th/main/%EA%B5%AC%EB%AF%B8%EC%8B%9C%EC%9D%98%ED%9A%8C%20%EC%84%A0%EA%B1%B0%EA%B5%AC.geojson?t=" + new Date().getTime();
         
         let mapChart = null;
@@ -185,7 +187,6 @@
 
         // D3 설정
         const mapContainer = document.getElementById('map-container');
-        // 반응형 환경에서 높이/너비가 0으로 잡히는 현상을 방지하기 위한 크기 보정
         const mapRect = mapContainer.getBoundingClientRect();
         const width = mapRect.width || 800;
         const height = mapRect.height || 600;
@@ -212,45 +213,50 @@
                 throw new Error("유효한 GeoJSON 데이터가 아닙니다.");
             }
 
-            // GeoJSON의 중심점을 찾고 크기에 맞게 프로젝션 설정
             const projection = d3.geoMercator().fitSize([width, height], data);
             const path = d3.geoPath().projection(projection);
 
-            // 사용자가 선언하지 않은 선거구에 대한 임시 데이터 자동 생성 로직 (시연용)
+            // GeoJSON 이름과 사용자 DB 이름 매칭 로직
             data.features.forEach((feature, i) => {
-                let districtName = null;
+                let rawName = null;
                 
-                // 1. GeoJSON 파일 내부 속성(properties)에서 가장 고유한 이름 필드를 찾습니다. ('NM' 최우선 추가)
-                districtName = feature.properties.NM || feature.properties.nm || feature.properties.SGG_NM || feature.properties.sgg_nm || feature.properties.name || feature.properties.NAME || feature.properties.SIG_KOR_NM;
+                // 1. GeoJSON에서 기본 이름 가져오기
+                rawName = feature.properties.NM || feature.properties.nm || feature.properties.SGG_NM || feature.properties.sgg_nm || feature.properties.name || feature.properties.NAME || feature.properties.SIG_KOR_NM;
                 
-                // 2. 명확한 이름 필드가 없다면, 속성 중 첫 번째 문자열을 가져옵니다.
-                if (!districtName) {
+                if (!rawName) {
                     for (let key in feature.properties) {
-                        // 숫자로만 이루어진 데이터는 건너뛰고 문자로 된 이름만 찾도록 보완
                         if (typeof feature.properties[key] === 'string' && isNaN(Number(feature.properties[key]))) {
-                            districtName = feature.properties[key];
+                            rawName = feature.properties[key];
                             break;
                         }
                     }
                 }
+                if (!rawName) rawName = "구역" + (i + 1);
+
+                // 2. 스마트 매칭: 지도의 이름(예: '가')을 추출해서 사용자가 적은 '구미시 가 선거구'와 연결!
+                let dbKey = rawName;
+                const districtChars = ['가','나','다','라','마','바','사','아','자','차','카','타','파','하'];
+                let char = null;
                 
-                // 3. 만약 파일에 이름이 아예 없다면 임시 번호 배정
-                if (!districtName) {
-                    districtName = "구역" + (i + 1);
+                // rawName에서 '가'~'하' 중 일치하는 글자를 정확히 찾음 (기존 [가-하] 정규식은 '구', '미', '시' 등 모든 한글을 매칭하는 버그가 있었음)
+                for (let c of districtChars) {
+                    if (rawName.includes(c)) {
+                        char = c;
+                        break;
+                    }
                 }
 
-                // GeoJSON 고유 이름을 그대로 속성에 저장
-                feature.properties._name = districtName;
-
-                // DB에 해당 선거구가 없다면 예시 데이터 자동 채우기
-                if (!candidateDatabase[districtName]) {
-                    candidateDatabase[districtName] = [
-                        { name: "테스트" + (i+1), party: "민주당", symbol: "1-가", photo: "https://via.placeholder.com/150/004EA2/FFFFFF?text=Photo" },
-                        { name: "테스트" + (i+2), party: "민주당", symbol: "1-나", photo: "https://via.placeholder.com/150/004EA2/FFFFFF?text=Photo" },
-                        { name: "테스트" + (i+3), party: "국민의힘", symbol: "2-가", photo: "https://via.placeholder.com/150/E61E2B/FFFFFF?text=Photo" },
-                        { name: "테스트" + (i+4), party: "무소속", symbol: "4", photo: "https://via.placeholder.com/150/9ca3af/FFFFFF?text=Photo" }
-                    ];
+                if (char) {
+                    // candidateDatabase 안에서 해당 글자('가')가 포함된 선거구 이름 찾기
+                    let foundKey = Object.keys(candidateDatabase).find(k => k.includes(char + " ") || k.includes(" " + char) || k.includes(char));
+                    if (foundKey) {
+                        dbKey = foundKey; // 매칭 성공시 dbKey를 덮어씌움
+                    }
                 }
+
+                // 지도 위에는 짧게 '가', '나' 글자만 표시되도록 깔끔하게 정리
+                feature.properties._name = char ? char : rawName; 
+                feature.properties._dbKey = dbKey;  // 데이터베이스 연결 키
             });
 
             // 지도 그리기
@@ -260,13 +266,11 @@
                 .attr("d", path)
                 .attr("class", "district-path")
                 .on("mouseover", function(event, d) {
-                    // 마우스 오버 시 스타일 및 패널 업데이트
                     d3.selectAll(".district-path").classed("active", false);
                     d3.select(this).classed("active", true);
-                    updateRightPanel(d.properties._name);
+                    updateRightPanel(d.properties._dbKey); // 스마트 매칭된 DB 키로 정보 띄우기
                 })
                 .on("click", function(event, d) {
-                    // 클릭 시 줌인 효과 (선택적)
                     const bounds = path.bounds(d);
                     const dx = bounds[1][0] - bounds[0][0];
                     const dy = bounds[1][1] - bounds[0][1];
@@ -280,51 +284,47 @@
                     );
                 });
 
-            // 지도 위에 선거구 이름 표시 (회색 원 + 단일 문자)
+            // 지도 위에 선거구 이름 표시
             const labels = g.selectAll(".district-label-group")
                 .data(data.features)
                 .enter().append("g")
                 .attr("class", "district-label-group pointer-events-none")
                 .attr("transform", function(d) {
                     const centroid = path.centroid(d);
-                    // 간혹 중심점 계산이 안 되는 구역이 있을 경우를 위한 예외 처리
                     if (isNaN(centroid[0]) || isNaN(centroid[1])) return "translate(-9999,-9999)";
                     return "translate(" + centroid + ")";
                 });
 
-            // GeoJSON 고유 이름 텍스트 추가 (사진처럼 두꺼운 흰색 외곽선 적용)
+            // 텍스트 스타일 (사진처럼 두꺼운 흰색 외곽선 적용)
             labels.append("text")
-                .attr("dy", ".35em") // 세로 중앙 정렬
-                .attr("text-anchor", "middle") // 가로 중앙 정렬
-                .attr("fill", "#1e293b") // 텍스트 색상 (짙은 남색)
-                .attr("stroke", "#ffffff") // 텍스트 외곽선 색상 (하얀색)
-                .attr("stroke-width", "4px") // 외곽선 두께
-                .attr("stroke-linejoin", "round") // 외곽선 모서리를 부드럽게
-                .style("paint-order", "stroke fill") // 외곽선이 글자를 파먹지 않도록 뒤로 배치
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .attr("fill", "#1e293b")
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", "4px")
+                .attr("stroke-linejoin", "round")
+                .style("paint-order", "stroke fill")
                 .style("font-size", function(d) {
-                    // 이름이 2글자 이상 길면 폰트 크기를 약간 조절
                     return d.properties._name.length > 2 ? "12px" : "18px";
                 })
-                .style("font-weight", "900") // 폰트 아주 굵게
+                .style("font-weight", "900")
                 .text(function(d) {
-                    // GeoJSON에 저장된 고유 이름 그대로 표시
                     return d.properties._name; 
                 });
 
-            // 초기 줌 레벨을 60%(0.6)로 설정 및 중앙 정렬
+            // 초기 줌 레벨
             const initialScale = 0.6;
             svg.call(zoom.transform, d3.zoomIdentity
                 .translate(width / 2 * (1 - initialScale), height / 2 * (1 - initialScale))
                 .scale(initialScale)
             );
             
-            // 첫 번째 지역을 기본으로 보여주기
+            // 첫 번째 지역 기본 렌더링
             if(data.features.length > 0) {
-                updateRightPanel(data.features[0].properties._name);
+                updateRightPanel(data.features[0].properties._dbKey);
                 d3.select(g.selectAll("path").nodes()[0]).classed("active", true);
             }
         }).catch(error => {
-            // 에러 발생 시 지도 영역에 오류 메시지 출력
             console.error("지도 로드 에러:", error);
             document.getElementById('map-container').innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full text-center p-6 z-50">
@@ -336,7 +336,7 @@
             `;
         });
 
-        // 줌 버튼 이벤트 연결
+        // 줌 버튼 이벤트
         document.getElementById('btn-zoom-in').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 1.3));
         document.getElementById('btn-zoom-out').addEventListener('click', () => svg.transition().call(zoom.scaleBy, 0.7));
         document.getElementById('btn-zoom-reset').addEventListener('click', () => {
@@ -354,16 +354,15 @@
             if (currentDistrict === districtName) return;
             currentDistrict = districtName;
 
-            // 타이틀 업데이트
-            document.getElementById('panel-district-title').innerText = `${districtName} 후보자 명단`;
+            // 타이틀 업데이트 (화면에 나오는 글자)
+            let displayTitle = districtName.includes("선거구") ? districtName : `${districtName} 선거구`;
+            document.getElementById('panel-district-title').innerText = `${displayTitle} 후보자 명단`;
 
             const candidates = candidateDatabase[districtName] || [];
-            
-            // 2. 후보자 리스트 렌더링
             const listDiv = document.getElementById('candidate-list');
             
             if (candidates.length === 0) {
-                listDiv.innerHTML = '<div class="h-full flex items-center justify-center"><p class="text-gray-400 font-medium">등록된 후보자가 없습니다.</p></div>';
+                listDiv.innerHTML = '<div class="py-10 flex flex-col items-center justify-center"><p class="text-gray-400 font-medium mb-2 text-4xl">📭</p><p class="text-gray-400 font-medium text-sm text-center">등록된 후보자가 없습니다.</p></div>';
                 return;
             }
 
@@ -371,15 +370,11 @@
                 const color = PARTY_COLORS[c.party] || PARTY_COLORS["무소속"];
                 return `
                     <div class="relative overflow-hidden flex items-center p-4 bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-                        <!-- 정당 색상 왼쪽 띠 -->
                         <div class="absolute left-0 top-0 bottom-0 w-2" style="background-color: ${color};"></div>
-                        <!-- 하얀색 투명 기표 마크 배경 -->
                         <div class="stamp-bg"></div>
                         
-                        <!-- 프로필 사진 -->
                         <img src="${c.photo}" alt="${c.name}" class="w-20 h-20 rounded-full object-cover border-4 z-10 bg-gray-100 ml-2" style="border-color: ${color};">
                         
-                        <!-- 후보자 정보 -->
                         <div class="ml-5 z-10 flex-1">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="px-2.5 py-0.5 text-xs font-bold text-white rounded-md shadow-sm" style="background-color: ${color};">${c.symbol}</span>
@@ -396,12 +391,11 @@
             const counts = {"민주당": 0, "국민의힘": 0, "무소속": 0};
             let totalCandidates = 0;
 
-            // 모든 선거구의 후보자 데이터를 순회하며 정당별 총합 계산
             for (const district in candidateDatabase) {
                 const candidates = candidateDatabase[district];
                 candidates.forEach(c => {
                     if(counts[c.party] !== undefined) counts[c.party]++;
-                    else counts["무소속"]++; // 알 수 없는 정당은 무소속(기타) 처리
+                    else counts["무소속"]++; 
                     totalCandidates++;
                 });
             }
@@ -410,7 +404,6 @@
             const data = [];
             const bgColors = [];
 
-            // 0명인 정당은 차트에서 제외
             for (const [party, count] of Object.entries(counts)) {
                 if (count > 0) {
                     labels.push(party);
@@ -421,7 +414,6 @@
 
             const ctx = document.getElementById('partyChart').getContext('2d');
 
-            // 도넛 차트 가운데 텍스트를 그리는 커스텀 플러그인
             const centerTextPlugin = {
                 id: 'centerText',
                 beforeDraw: function(chart) {
@@ -436,17 +428,14 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    // 화면(차트) 크기에 비례하여 텍스트 크기 자동 조절
                     var minDim = Math.min(width, height);
-                    var titleFontSize = Math.max(10, minDim * 0.08); // 최소 10px 보장
-                    var numberFontSize = Math.max(16, minDim * 0.16); // 최소 16px 보장
+                    var titleFontSize = Math.max(10, minDim * 0.08);
+                    var numberFontSize = Math.max(16, minDim * 0.16);
 
-                    // "총 후보수" 텍스트
                     ctx.font = "bold " + titleFontSize + "px 'Noto Sans KR'";
                     ctx.fillStyle = "#6b7280";
                     ctx.fillText("총 후보수", centerX, centerY - (titleFontSize * 0.8));
 
-                    // "--명" 텍스트
                     ctx.font = "900 " + numberFontSize + "px 'Noto Sans KR'";
                     ctx.fillStyle = "#1e293b";
                     ctx.fillText(totalCandidates + "명", centerX, centerY + (numberFontSize * 0.6));
@@ -475,7 +464,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '70%', // 텍스트를 넣기 위해 가운데 공간 확보
+                    cutout: '70%', 
                     plugins: {
                         legend: {
                             position: 'right',
@@ -497,7 +486,6 @@
             });
         }
 
-        // 페이지 로드 시 총 후보자 차트를 1회 렌더링합니다.
         renderTotalChart();
     </script>
 </body>
